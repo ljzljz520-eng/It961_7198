@@ -15,12 +15,11 @@ type SearchResult struct {
 }
 
 type Searcher struct {
-	store        *persistence.Store
-	labelScratch []string
+	store *persistence.Store
 }
 
 func NewSearcher(store *persistence.Store) *Searcher {
-	return &Searcher{store: store, labelScratch: make([]string, 0, 8)}
+	return &Searcher{store: store}
 }
 
 func (s *Searcher) Search(filter domain.MaterialFilter) ([]SearchResult, error) {
@@ -46,15 +45,18 @@ func (s *Searcher) Search(filter domain.MaterialFilter) ([]SearchResult, error) 
 }
 
 func (s *Searcher) decorate(m domain.Material, filter domain.MaterialFilter) SearchResult {
-	s.labelScratch = s.labelScratch[:0]
-	s.labelScratch = append(s.labelScratch, string(m.Kind), m.Subject, m.Campus, m.VersionDate)
+	// Build an independent label slice per result. A shared scratch buffer would
+	// alias every result's Labels to the same backing array, so a later Search
+	// would silently overwrite labels produced by an earlier Search.
+	labels := make([]string, 0, 8)
+	labels = append(labels, string(m.Kind), m.Subject, m.Campus, m.VersionDate)
 	if filter.Query != "" {
-		s.labelScratch = append(s.labelScratch, "text-match")
+		labels = append(labels, "text-match")
 	}
 	if filter.Tag != "" {
-		s.labelScratch = append(s.labelScratch, "tag:"+filter.Tag)
+		labels = append(labels, "tag:"+filter.Tag)
 	}
-	return SearchResult{Material: m, Labels: s.labelScratch, Score: score(m, filter)}
+	return SearchResult{Material: m, Labels: labels, Score: score(m, filter)}
 }
 
 func score(m domain.Material, filter domain.MaterialFilter) int {
