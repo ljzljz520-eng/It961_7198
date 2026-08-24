@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "metrics": {
+    "production_loc": 2430,
+    "production_files": 40,
+    "production_packages": 8,
+    "test_files": 10,
+    "production_functions": 167,
+    "decision_points": 363
+  },
+  "persistence": {
+    "module": "go.etcd.io/bbolt",
+    "entities": [
+      "CourseMaterial",
+      "LightSimulation",
+      "RouteMap",
+      "SafetyVideo"
+    ],
+    "reopen_test": "TestPersistenceSurvivesReopen"
+  },
+  "workflows": [
+    {
+      "steps": [
+        "coach submits subject material with campus and version metadata",
+        "catalog validates and normalizes tags before persistence",
+        "reviewer moves the material through review to published status",
+        "audit history records the durable publication result"
+      ],
+      "test": "TestWorkflowMaterialIngestion"
+    },
+    {
+      "steps": [
+        "coach supplies campus and subject filters",
+        "searcher loads persisted materials and applies the filter",
+        "retrieval workflow builds result labels and a coverage snapshot",
+        "table output presents matching materials for the selected campus"
+      ],
+      "test": "TestWorkflowCrossCampusSearch"
+    },
+    {
+      "steps": [
+        "coach submits a safety video as a draft",
+        "catalog moves the material into the review state",
+        "reviewer records an approval decision and review version",
+        "published status and the review record remain in bbolt"
+      ],
+      "test": "TestWorkflowStatusReview"
+    }
+  ]
+}
